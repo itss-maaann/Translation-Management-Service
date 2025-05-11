@@ -7,15 +7,24 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: php-app
     container_name: tms_app
     working_dir: /var/www/html
+    entrypoint: ["/usr/local/bin/setup.sh"]
+    command: ["php-fpm"]
     volumes:
-      - ./src:/var/www/html               # your code
-      - vendor_data:/var/www/html/vendor  # persist composer installs
+      - ./src:/var/www/html
+      - vendor_data:/var/www/html/vendor
     depends_on:
       - db
       - redis
     environment:
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: tms
+      DB_USERNAME: tms_user
+      DB_PASSWORD: secret
       XDEBUG_MODE: coverage
       XDEBUG_CONFIG: "client_host=host.docker.internal"
 
@@ -26,12 +35,13 @@ services:
     image: nginx:stable-alpine
     container_name: tms_web
     ports:
-      - "8080:80"
+      - "8085:80"
     volumes:
       - ./src:/var/www/html
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
     depends_on:
       - app
+      - node
 
   # ─────────────────────────────────────────────────
   # Vite dev server (HMR)
@@ -39,10 +49,16 @@ services:
   node:
     image: node:18-alpine
     container_name: tms_node
-    working_dir: /var/www/html
-    command: sh -c "npm ci && npm run dev -- --host 0.0.0.0"
+    working_dir: /var/www/html/tms-frontend
+    command: >
+        sh -c "
+          chown -R 1000:1000 /var/www/html/tms-frontend &&
+          npm install &&
+          npm run dev -- --host 0.0.0.0
+        "
     volumes:
-      - ./src:/var/www/html
+      - ./src/tms-frontend:/var/www/html/tms-frontend:delegated
+      - tms_frontend_node_modules:/var/www/html/tms-frontend/node_modules
     ports:
       - "5173:5173"
     depends_on:
@@ -90,3 +106,4 @@ services:
 volumes:
   db_data:
   vendor_data:
+  tms_frontend_node_modules:

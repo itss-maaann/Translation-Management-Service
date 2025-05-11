@@ -32,8 +32,36 @@ use OpenApi\Annotations as OA;
  *   @OA\Property(property="current_page", type="integer"),
  *   @OA\Property(property="last_page", type="integer")
  * )
+ *
+ * @OA\Schema(
+ *   schema="Locale",
+ *   title="Locale",
+ *   @OA\Property(property="id", type="integer"),
+ *   @OA\Property(property="code", type="string"),
+ *   @OA\Property(property="name", type="string")
+ * )
+ *
+ * @OA\Schema(
+ *   schema="LocalesPaginated",
+ *   @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Locale")),
+ *   @OA\Property(property="current_page", type="integer"),
+ *   @OA\Property(property="last_page", type="integer")
+ * )
+ *
+ * @OA\Schema(
+ *   schema="Tag",
+ *   title="Tag",
+ *   @OA\Property(property="id", type="integer"),
+ *   @OA\Property(property="name", type="string")
+ * )
+ *
+ * @OA\Schema(
+ *   schema="TagsPaginated",
+ *   @OA\Property(property="data", type="array", @OA\Items(ref="#/components/schemas/Tag")),
+ *   @OA\Property(property="current_page", type="integer"),
+ *   @OA\Property(property="last_page", type="integer")
+ * )
  */
 class Schemas
 {
-
 }

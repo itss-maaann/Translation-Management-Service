@@ -4,15 +4,19 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 
 class AdminSeeder extends Seeder
 {
-    public function run()
+    public function run(): void
     {
-        User::factory()->create([
-            'name'     => 'Majid Shahzeb',
-            'email'    => 'itssmaaann@gmail.com',
-            'password' => bcrypt('Majid123'),
-        ]);
+        User::firstOrCreate(
+            ['email' => 'itssmaaann@gmail.com'],
+            [
+                'name'              => 'Majid Shahzeb',
+                'password'          => Hash::make('Majid123'),
+                'email_verified_at' => now(),
+            ]
+        );
     }
 }
