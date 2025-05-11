@@ -10,7 +10,14 @@ use App\Services\AuthService;
 use App\Traits\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Annotations as OA;
 
+/**
+ * @OA\Tag(
+ *   name="Auth",
+ *   description="Authentication endpoints"
+ * )
+ */
 class AuthController extends Controller
 {
     use ApiResponse;
@@ -18,7 +25,34 @@ class AuthController extends Controller
     public function __construct(private AuthService $authService) {}
 
     /**
-     * Handle a login request and return an access token.
+     * User login
+     *
+     * @OA\Post(
+     *   path="/api/login",
+     *   tags={"Auth"},
+     *   @OA\RequestBody(
+     *     required=true,
+     *     @OA\JsonContent(
+     *       required={"email","password"},
+     *       @OA\Property(property="email", type="string", format="email"),
+     *       @OA\Property(property="password", type="string", format="password")
+     *     )
+     *   ),
+     *   @OA\Response(
+     *     response=200,
+     *     description="Login successful",
+     *     @OA\JsonContent(
+     *       @OA\Property(property="status", type="string"),
+     *       @OA\Property(property="message", type="string"),
+     *       @OA\Property(
+     *         property="data",
+     *         type="object",
+     *         @OA\Property(property="token", type="string")
+     *       )
+     *     )
+     *   ),
+     *   @OA\Response(response=401, description="Invalid credentials")
+     * )
      */
     public function login(LoginRequest $request): JsonResponse
     {
@@ -34,7 +68,14 @@ class AuthController extends Controller
     }
 
     /**
-     * Revoke the current access token.
+     * User logout
+     *
+     * @OA\Post(
+     *   path="/api/logout",
+     *   tags={"Auth"},
+     *   security={{"sanctum":{}}},
+     *   @OA\Response(response=200, description="Logged out successfully")
+     * )
      */
     public function logout(Request $request): JsonResponse
     {
