@@ -3,7 +3,6 @@ import { useAuthStore } from '@/stores/auth'
 
 // Views & Pages
 import HomeView from '@/views/HomeView.vue'
-import swagger from '@/views/ApiDocs.vue'
 import LoginPage from '@/pages/LoginPage.vue'
 import LocaleListPage from '@/pages/Locales/LocaleListPage.vue'
 import TagListPage from '@/pages/Tags/TagListPage.vue'
@@ -16,7 +15,7 @@ const routes = [
   { path: '/tags', component: TagListPage, meta: { requiresAuth: true } },
   { path: '/translations', component: TranslationListPage, meta: { requiresAuth: true } },
   { path: '/:pathMatch(.*)*', redirect: '/' },
-  { path: '/docs', component: swagger, meta: { requiresAuth: true } },
+  // { path: '/docs', component: swagger, meta: { requiresAuth: true } },
 ]
 
 const router = createRouter({

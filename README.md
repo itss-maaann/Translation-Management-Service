@@ -131,7 +131,6 @@ TRANSLATIONS_EXPORT_TTL=3600
 ## 📚 Documentation
 
 * **Swagger UI**: Browse API endpoints and schemas at `/api/documentation`.
-* **OpenAPI spec**: available at `/docs`. through vue application.
 
 ---
 
