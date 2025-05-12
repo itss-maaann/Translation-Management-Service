@@ -1,34 +1,86 @@
 <template>
-  <div class="min-h-screen flex flex-col">
-    <!-- Header -->
-    <header class="bg-white shadow">
-      <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        <h1 class="text-lg font-semibold">Translation Manager</h1>
-        <button
+  <el-container style="height: 100vh">
+    <!-- Header with Navigation -->
+    <el-header height="60px" class="header-bar">
+      <div class="nav-wrapper">
+        <el-menu
+          mode="horizontal"
+          :default-active="active"
+          router
+          class="nav-menu"
+        >
+          <el-menu-item index="/">Home</el-menu-item>
+          <el-menu-item index="/locales">Locales</el-menu-item>
+          <el-menu-item index="/tags">Tags</el-menu-item>
+          <el-menu-item index="/translations">Translations</el-menu-item>
+          <el-menu-item index="/docs">
+          <a href="/api/documentation" target="_blank" rel="noopener">
+            API Docs
+          </a>
+        </el-menu-item>
+        </el-menu>
+
+        <el-button
+          type="danger"
+          plain
           @click="handleLogout"
-          class="text-red-600 hover:text-red-800 font-medium"
+          class="logout-btn"
         >
           Logout
-        </button>
+        </el-button>
       </div>
-    </header>
+    </el-header>
 
     <!-- Main Content -->
-    <main class="flex-1 container mx-auto p-4">
+    <el-main class="main-content">
       <slot />
-    </main>
-  </div>
+    </el-main>
+  </el-container>
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-const auth = useAuthStore();
-const router = useRouter();
+const router = useRouter()
+const route = useRoute()
+const auth = useAuthStore()
+
+// keep menu in sync with route
+const active = route.path
 
 function handleLogout() {
-  auth.logout();
-  router.push('/login');
+  auth.logout()
 }
 </script>
+
+<style scoped>
+.header-bar {
+  background-color: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+}
+
+.nav-wrapper {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.nav-menu {
+  flex: 1;
+  border-bottom: none;
+}
+
+.logout-btn {
+  margin-left: auto;
+}
+
+.main-content {
+  padding: 24px;
+  background-color: #f5f7fa; /* subtle background */
+}
+</style>

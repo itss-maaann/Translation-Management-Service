@@ -1,92 +1,83 @@
-import { defineStore } from 'pinia';
-import * as tagsAPI from '@/api/tags';
-import type { Tag } from '@/api/tags';
+import { defineStore } from 'pinia'
+import * as tagsAPI from '@/api/tags'
+import type { Tag } from '@/api/tags'
+
+interface Pagination {
+  page: number
+  perPage: number
+  total: number
+}
 
 interface State {
-  items: Tag[];
-  total: number;
-  perPage: number;
-  page: number;
-  loading: boolean;
-  error: string;
-  current: Tag | null;
+  items: Tag[]
+  pagination: Pagination
+  loading: boolean
+  error: string | null
 }
 
 export const useTagStore = defineStore('tag', {
   state: (): State => ({
     items: [],
-    total: 0,
-    perPage: 15,
-    page: 1,
+    pagination: { page: 1, perPage: 15, total: 0 },
     loading: false,
-    error: '',
-    current: null
+    error: null,
   }),
+
   actions: {
-    async fetch(page = 1) {
-      this.loading = true;
-      this.error = '';
+    async fetch(opts: { page?: number; perPage?: number } = {}) {
+      this.loading = true
+      this.error = null
       try {
-        const { data, meta } = await tagsAPI.fetchTags(
-          this.perPage,
-          page
-        );
-        this.items = data;
-        this.total = meta.total;
-        this.page = page;
+        const page = opts.page ?? this.pagination.page
+        const perPage = opts.perPage ?? this.pagination.perPage
+        const { data, meta } = await tagsAPI.fetchTags(perPage, page)
+        this.items = data
+        this.pagination = {
+          page: meta.current_page,
+          perPage: meta.per_page,
+          total: meta.total,
+        }
       } catch (err: any) {
-        this.error = err.message || 'Failed to fetch tags';
+        this.error = err.response?.data?.message || err.message || 'Failed to load tags'
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
-    async get(id: number) {
-      this.loading = true;
-      this.error = '';
+
+    async save(payload: { id?: number; name: string }) {
+      this.loading = true
+      this.error = null
       try {
-        this.current = await tagsAPI.getTag(id);
+        if (payload.id) {
+          const updated = await tagsAPI.updateTag(payload.id, { name: payload.name })
+          const idx = this.items.findIndex((t) => t.id === updated.id)
+          if (idx !== -1) this.items.splice(idx, 1, updated)
+          return updated
+        } else {
+          const created = await tagsAPI.createTag({ name: payload.name })
+          this.items.unshift(created)
+          return created
+        }
       } catch (err: any) {
-        this.error = err.message || 'Failed to load tag';
+        this.error = err.response?.data?.message || err.message || 'Save failed'
+        throw err
       } finally {
-        this.loading = false;
+        this.loading = false
       }
     },
-    async create(payload: { name: string }) {
-      this.loading = true;
-      this.error = '';
-      try {
-        const created = await tagsAPI.createTag(payload);
-        this.items.unshift(created);
-      } catch (err: any) {
-        this.error = err.message || 'Failed to create tag';
-      } finally {
-        this.loading = false;
-      }
-    },
-    async update(id: number, payload: Partial<{ name: string }>) {
-      this.loading = true;
-      this.error = '';
-      try {
-        const updated = await tagsAPI.updateTag(id, payload);
-        const idx = this.items.findIndex(i => i.id === id);
-        if (idx !== -1) this.items.splice(idx, 1, updated);
-      } catch (err: any) {
-        this.error = err.message || 'Failed to update tag';
-      } finally {
-        this.loading = false;
-      }
-    },
+
     async remove(id: number) {
-      this.loading = true;
-      this.error = '';
+      this.loading = true
+      this.error = null
       try {
-        await tagsAPI.deleteTag(id);
-        this.items = this.items.filter(i => i.id !== id);
+        await tagsAPI.deleteTag(id)
+        this.items = this.items.filter((t) => t.id !== id)
       } catch (err: any) {
-        this.error = err.message || 'Failed to delete tag';
+        this.error = err.response?.data?.message || err.message || 'Delete failed'
+        throw err
       } finally {
-        this.loading = false;
+        this.loading = false
       }
-    }
-  }
-});
+    },
+  },
+})

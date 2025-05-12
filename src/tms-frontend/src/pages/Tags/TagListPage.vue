@@ -1,102 +1,127 @@
 <template>
-  <MainLayout>
-    <div class="flex items-center justify-between mb-4">
-      <h1 class="text-xl font-semibold">Tags</h1>
-      <button
-        @click="openForm()"
-        class="px-4 py-2 bg-secondary text-white rounded hover:bg-secondary/90 transition"
-      >
-        + New Tag
-      </button>
-    </div>
-
+  <main-layout>
     <DataTable
       :columns="columns"
-      :rows="items"
-      :loading="loading"
-      :pagination="{ currentPage: page, perPage, total }"
-      @page-change="fetch"
-      @per-page-change="changePerPage"
+      :rows="store.items"
+      :loading="store.loading"
+      :error="store.error"
+      :pagination="store.pagination"
+      @page-change="onPage"
     >
-      <template #actions="{ row }">
-        <button
-          @click="edit(row.id)"
-          class="text-blue-600 hover:underline"
-        >Edit</button>
-        <button
-          @click="remove(row.id)"
-          class="text-red-600 hover:underline ml-2"
-        >Delete</button>
+      <template #header>
+        <el-page-header
+          content="Manage your translation tags"
+          class="page-header"
+        >
+          <template #extra>
+            <el-button type="primary" icon="el-icon-plus" @click="openCreate">
+              New Tag
+            </el-button>
+          </template>
+        </el-page-header>
+      </template>
+
+      <template #ActionsColumn="{ row }">
+        <el-button size="small" @click="openEdit(row)">Edit</el-button>
+        <el-button size="small" type="danger" @click="remove(row.id)">
+          Delete
+        </el-button>
       </template>
     </DataTable>
 
-    <ModalForm
-      v-model:show="showForm"
-      :title="formTitle"
-      @submit="onSubmit"
+    <el-dialog
+      :title="dialogTitle"
+      :visible.sync="dialogVisible"
+      width="400px"
+      @close="closeDialog"
     >
-      <template #body>
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Name</label>
-            <input
-              v-model="form.name"
-              type="text"
-              class="w-full px-3 py-2 border rounded"
-            />
-          </div>
-        </div>
+      <el-form :model="form" label-width="100px">
+        <el-form-item label="Name" :error="formErrors.name">
+          <el-input v-model="form.name" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="closeDialog">Cancel</el-button>
+        <el-button type="primary" @click="save">Save</el-button>
       </template>
-    </ModalForm>
-  </MainLayout>
+    </el-dialog>
+  </main-layout>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue';
-import { useTagStore } from '@/stores/tag';
-import MainLayout from '@/layouts/MainLayout.vue';
-import DataTable from '@/components/ui/DataTable.vue';
-import ModalForm from '@/components/ui/ModalForm.vue';
+import { ref, onMounted, reactive } from 'vue'
+import { useTagStore } from '@/stores/tag'
+import MainLayout from '@/layouts/MainLayout.vue'
+import DataTable from '@/components/ui/DataTable.vue'
 
-const store = useTagStore();
-const items = computed(() => store.items);
-const loading = computed(() => store.loading);
-const page = computed(() => store.page);
-const perPage = computed(() => store.perPage);
-const total = computed(() => store.total);
+const store = useTagStore()
 
 const columns = [
-  { label: 'ID', field: 'id', sortable: true },
-  { label: 'Name', field: 'name', sortable: true }
-];
+  { prop: 'name', label: 'Name', sortable: true },
+  {
+    prop: 'actions',
+    label: 'Actions',
+    slot: 'ActionsColumn',
+    attrs: { width: 180 },
+  },
+]
 
-const showForm = ref(false);
-const isEdit = ref(false);
-const form = reactive({ id: null as number | null, name: '' });
+const dialogVisible = ref(false)
+const dialogTitle = ref('')
+const form = reactive<{ id?: number; name: string }>({ name: '' })
+const formErrors = reactive<{ name?: string }>({})
 
-const formTitle = computed(() => (isEdit.value ? 'Edit Tag' : 'New Tag'));
+onMounted(fetchData)
+async function fetchData() {
+  await store.fetch({
+    page: store.pagination.page,
+    perPage: store.pagination.perPage,
+  })
+}
 
-onMounted(() => fetch(1));
-function fetch(p = 1) { store.fetch(p); }
-function changePerPage(n: number) { store.perPage = n; fetch(1); }
-function openForm() { isEdit.value = false; form.id = null; form.name = ''; showForm.value = true; }
-async function edit(id: number) {
-  await store.get(id);
-  if (store.current) {
-    isEdit.value = true;
-    form.id = store.current.id;
-    form.name = store.current.name;
-    showForm.value = true;
+function openCreate() {
+  dialogTitle.value = 'Create Tag'
+  form.id = undefined
+  form.name = ''
+  formErrors.name = undefined
+  dialogVisible.value = true
+}
+
+function openEdit(row: any) {
+  dialogTitle.value = 'Edit Tag'
+  form.id = row.id
+  form.name = row.name
+  formErrors.name = undefined
+  dialogVisible.value = true
+}
+
+function closeDialog() {
+  dialogVisible.value = false
+}
+
+async function save() {
+  formErrors.name = undefined
+  try {
+    await store.save({ id: form.id, name: form.name })
+    dialogVisible.value = false
+    fetchData()
+  } catch (err: any) {
+    formErrors.name = err.response?.data?.errors?.name?.[0]
   }
 }
-async function onSubmit() {
-  if (isEdit.value && form.id) {
-    await store.update(form.id, { name: form.name });
-  } else {
-    await store.create({ name: form.name });
-  }
-  showForm.value = false;
-  fetch(page.value);
+
+async function remove(id: number) {
+  await store.remove(id)
+  fetchData()
 }
-async function remove(id: number) { if (confirm('Delete this tag?')) { await store.remove(id); fetch(page.value); } }
+
+function onPage(page: number) {
+  store.fetch({ page })
+}
 </script>
+
+<style scoped>
+.page-header {
+  margin-bottom: 16px;
+}
+</style>

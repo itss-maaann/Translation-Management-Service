@@ -1,56 +1,96 @@
 <template>
-    <div class="min-h-screen flex items-center justify-center bg-gray-50">
-      <div class="w-full max-w-md bg-white rounded-lg shadow-md p-8">
-        <h2 class="text-2xl font-semibold text-center mb-6">Sign In</h2>
-        <form @submit.prevent="onSubmit" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              v-model="email"
-              type="email"
-              required
-              placeholder="you@example.com"
-              class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <input
-              v-model="password"
-              type="password"
-              required
-              placeholder="••••••••"
-              class="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <button
-            type="submit"
-            class="w-full py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition"
+  <div class="login-container">
+    <el-card class="mx-auto" style="max-width: 400px;">
+      <h2 class="text-center mb-6">Sign In</h2>
+
+      <el-alert
+        v-if="errorMessage"
+        :title="errorMessage"
+        type="error"
+        class="mb-4"
+        show-icon
+      />
+
+      <el-form :model="form" status-icon @submit.prevent="onSubmit">
+        <el-form-item prop="email">
+          <el-input
+            v-model="form.email"
+            placeholder="Email"
+            autocomplete="username"
+          />
+        </el-form-item>
+
+        <el-form-item prop="password">
+          <el-input
+            v-model="form.password"
+            type="password"
+            placeholder="Password"
+            autocomplete="current-password"
+          />
+        </el-form-item>
+
+        <el-form-item>
+          <el-button
+            type="primary"
+            :loading="loading"
+            native-type="submit"
+            class="w-full"
           >
             Sign In
-          </button>
-        </form>
-      </div>
-    </div>
-  </template>
-  
-  <script setup lang="ts">
-  import { ref } from 'vue';
-  import { useRouter } from 'vue-router';
-  import { useAuthStore } from '@/stores/auth';
-  
-  const email = ref('');
-  const password = ref('');
-  const auth = useAuthStore();
-  const router = useRouter();
-  
-  async function onSubmit() {
-    try {
-      await auth.login({ email: email.value, password: password.value });
-      router.push('/locales');
-    } catch (err: any) {
-      console.error('Login failed:', err.message || err);
-    }
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+
+interface LoginForm {
+  email: string
+  password: string
+}
+
+const form = reactive<LoginForm>({
+  email: '',
+  password: '',
+})
+
+const loading = ref(false)
+const errorMessage = ref('')
+const auth = useAuthStore()
+const router = useRouter()
+
+async function onSubmit() {
+  loading.value = true
+  errorMessage.value = ''
+  try {
+    await auth.login(form.email, form.password)
+    router.push('/')
+  } catch (e: any) {
+    errorMessage.value = e.response?.data?.message ?? 'Invalid credentials'
+  } finally {
+    loading.value = false
   }
-  </script>
-  
+}
+</script>
+
+<style scoped>
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f5f7fa;
+  padding: 2rem;
+}
+.text-center {
+  text-align: center;
+}
+.mb-6 {
+  margin-bottom: 1.5rem;
+}
+</style>

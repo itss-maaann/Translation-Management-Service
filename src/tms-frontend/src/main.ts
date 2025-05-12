@@ -1,12 +1,18 @@
-import { createApp } from 'vue';
-import App from './App.vue';
-import router from './router';
-import { createPinia } from 'pinia';
-import './assets/main.css';
+import { createApp } from 'vue'
+import App from './App.vue'
+import router from './router'
+import { createPinia } from 'pinia'
 
-const app = createApp(App);
-const pinia = createPinia();
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
+import { api } from '@/api/axios'
 
-app.use(pinia);
-app.use(router);
-app.mount('#app');
+const app = createApp(App)
+
+const token = localStorage.getItem('tms_token')
+if (token) api.defaults.headers.common.Authorization = `Bearer ${token}`
+
+app.use(createPinia())
+app.use(router)
+app.use(ElementPlus)
+app.mount('#app')

@@ -1,11 +1,13 @@
-import { createRouter, createWebHistory } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
+import { createRouter, createWebHistory } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
-import HomeView from '@/views/HomeView.vue';
-import LoginPage from '@/pages/LoginPage.vue';
-import LocaleListPage from '@/pages/Locales/LocaleListPage.vue';
-import TagListPage from '@/pages/Tags/TagListPage.vue';
-import TranslationListPage from '@/pages/Translations/TranslationListPage.vue';
+// Views & Pages
+import HomeView from '@/views/HomeView.vue'
+import swagger from '@/views/ApiDocs.vue'
+import LoginPage from '@/pages/LoginPage.vue'
+import LocaleListPage from '@/pages/Locales/LocaleListPage.vue'
+import TagListPage from '@/pages/Tags/TagListPage.vue'
+import TranslationListPage from '@/pages/Translations/TranslationListPage.vue'
 
 const routes = [
   { path: '/login', component: LoginPage },
@@ -13,19 +15,26 @@ const routes = [
   { path: '/locales', component: LocaleListPage, meta: { requiresAuth: true } },
   { path: '/tags', component: TagListPage, meta: { requiresAuth: true } },
   { path: '/translations', component: TranslationListPage, meta: { requiresAuth: true } },
-];
+  { path: '/:pathMatch(.*)*', redirect: '/' },
+  { path: '/docs', component: swagger, meta: { requiresAuth: true } },
+]
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
-});
+  routes,
+})
 
 router.beforeEach((to, from, next) => {
-  const auth = useAuthStore();
-  if (to.meta.requiresAuth && !auth.token) {
-    return next('/login');
+  const auth = useAuthStore()
+  // Redirect authenticated users away from login
+  if (to.path === '/login' && auth.isAuthenticated) {
+    return next('/')
   }
-  next();
-});
+  // Protect routes that require authentication
+  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+    return next('/login')
+  }
+  next()
+})
 
-export default router;
+export default router

@@ -2,7 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* existing overrides below */
 @import './base.css';
 
 #app {
